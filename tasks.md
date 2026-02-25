@@ -1,0 +1,358 @@
+# Implementation Plan: Omnichannel Customer Experience Platform
+
+## Overview
+
+This implementation plan breaks down the Omnichannel CX Platform into discrete, incremental coding tasks. The platform will be built using TypeScript with a microservices architecture, leveraging cloud-native technologies and AI models. The implementation follows a bottom-up approach, starting with core data models and services, then building up to the AI processing pipeline, routing engine, and finally the user interfaces.
+
+## Tasks
+
+- [x] 1. Set up project infrastructure and core types
+  - Initialize TypeScript monorepo with workspaces for each microservice
+  - Configure build tools (TypeScript, ESLint, Prettier)
+  - Set up testing frameworks (Jest for unit tests, fast-check for property tests)
+  - Define core TypeScript interfaces and enums (UnifiedMessage, ChannelType, IntentCategory, etc.)
+  - Set up Docker and Kubernetes configuration files
+  - Configure message queue (Kafka) connection utilities
+  - _Requirements: All requirements (foundational)_
+
+- [ ] 2. Implement Channel Adapter Service
+  - [x] 2.1 Create base ChannelAdapter interface and abstract class
+    - Implement message normalization logic
+    - Create channel-specific adapters (WhatsApp, Email, WebChat, Voice, Social)
+    - Implement multimedia content storage and reference handling
+    - _Requirements: 1.1, 1.2, 1.3_
+  - [x] 2.2 Write property test for message normalization
+    - **Property 1: Message Normalization Completeness**
+    - **Validates: Requirements 1.1, 1.2, 1.3**
+  - [x] 2.3 Implement retry logic with exponential backoff
+    - Create retry utility with configurable max attempts
+    - Implement failure logging
+    - _Requirements: 1.4_
+  - [x] 2.4 Write property test for retry behavior
+    - **Property 2: Retry with Exponential Backoff**
+    - **Validates: Requirements 1.4**
+  - [x] 2.5 Implement channel-specific send response methods
+    - Create adapters for sending responses back to each channel
+    - Handle channel-specific formatting requirements
+    - _Requirements: 1.1_
+
+- [ ] 3. Implement Context Store Service
+  - [ ] 3.1 Create Conversation and CustomerProfile data models
+    - Define MongoDB schemas for conversations
+    - Define PostgreSQL schemas for customer profiles
+    - Implement data access layer with connection pooling
+    - _Requirements: 4.1, 4.2, 4.4_
+  - [ ] 3.2 Implement conversation management methods
+    - Create getConversation, createConversation, addMessage methods
+    - Implement conversation linking across channels
+    - Implement Redis caching for active conversations
+    - _Requirements: 4.1, 4.2_
+  - [ ] 3.3 Write property tests for conversation context
+    - **Property 11: Cross-Channel Conversation Linking**
+    - **Property 12: Chronological Message Ordering**
+    - **Property 13: Customer Profile Persistence**
+    - **Validates: Requirements 4.1, 4.2, 4.3, 4.4**
+  - [ ] 3.4 Implement conversation archival logic
+    - Create background job to archive inactive conversations (24+ hours)
+    - Ensure archived conversations remain retrievable
+    - _Requirements: 4.5_
+  - [ ] 3.5 Write property test for archival
+    - **Property 14: Conversation Archival**
+    - **Validates: Requirements 4.5**
+
+- [ ] 4. Checkpoint - Ensure foundational services work
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 5. Implement Intent Classification Service
+  - [ ] 5.1 Set up BERT model integration
+    - Load fine-tuned BERT model for intent classification
+    - Create model inference wrapper with error handling
+    - Implement entity extraction using NER
+    - _Requirements: 2.1, 2.4_
+  - [ ] 5.2 Implement intent classification logic
+    - Create classifyIntent method with confidence scoring
+    - Implement multi-intent detection and ranking
+    - Add low-confidence flagging (threshold 0.70)
+    - _Requirements: 2.1, 2.2, 2.3, 2.5_
+  - [ ] 5.3 Write property tests for intent classification
+    - **Property 3: Intent Classification Validity**
+    - **Property 4: Low Confidence Flagging**
+    - **Property 5: Entity Extraction Presence**
+    - **Property 6: Multi-Intent Ranking**
+    - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5**
+
+- [ ] 6. Implement Sentiment Analysis Service
+  - [ ] 6.1 Set up RoBERTa model integration
+    - Load fine-tuned RoBERTa model for sentiment analysis
+    - Create model inference wrapper
+    - _Requirements: 3.1, 3.2_
+  - [ ] 6.2 Implement sentiment analysis logic
+    - Create analyzeSentiment method with score calculation
+    - Map scores to sentiment labels
+    - Implement sentiment trend tracking
+    - Implement deterioration detection (>0.3 point drop)
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+  - [ ] 6.3 Write property tests for sentiment analysis
+    - **Property 7: Sentiment Score Range**
+    - **Property 9: Sentiment History Tracking**
+    - **Property 10: Sentiment Deterioration Detection**
+    - **Validates: Requirements 3.1, 3.2, 3.4, 3.5**
+
+- [ ] 7. Implement Urgency Predictor Service
+  - [ ] 7.1 Create urgency scoring algorithm
+    - Implement multi-factor scoring (sentiment, intent, customer value, time sensitivity)
+    - Add repeat contact detection and scoring boost
+    - Add VIP customer boost (+2 points)
+    - Ensure score clamping to [1, 10] range
+    - _Requirements: 5.1, 5.2, 5.4, 5.5_
+  - [ ] 7.2 Write property tests for urgency prediction
+    - **Property 15: Urgency Score Range**
+    - **Property 16: Multi-Factor Urgency Calculation**
+    - **Property 18: Repeat Contact Urgency Increase**
+    - **Property 19: VIP Customer Urgency Boost**
+    - **Validates: Requirements 5.1, 5.2, 5.4, 5.5**
+
+- [ ] 8. Checkpoint - Ensure AI processing pipeline works
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 9. Implement Response Generator Service with RAG
+  - [ ] 9.1 Set up vector database and embedding model
+    - Configure Pinecone or Weaviate for knowledge base
+    - Integrate text-embedding-3-large for embeddings
+    - Create knowledge base document ingestion pipeline
+    - _Requirements: 7.3_
+  - [ ] 9.2 Implement LLM integration (GPT-4 or Claude)
+    - Create LLM client with system prompts for brand voice
+    - Implement RAG query and context injection
+    - Add response personalization using customer data
+    - _Requirements: 7.1, 7.2, 7.3, 7.5_
+  - [ ] 9.3 Implement response safety validation
+    - Create validation rules for PII detection
+    - Implement policy violation detection
+    - Add confidence threshold checking (0.80)
+    - Block unsafe responses and trigger escalation
+    - _Requirements: 11.1, 11.2, 11.3, 11.5_
+  - [ ] 9.4 Write property tests for response generation
+    - **Property 24: High Confidence Automation**
+    - **Property 25: Response Personalization**
+    - **Property 26: Knowledge Base Integration**
+    - **Property 27: Response Actionability**
+    - **Property 40: Response Safety Validation**
+    - **Property 41: PII Protection**
+    - **Property 42: Policy Violation Blocking**
+    - **Property 44: Low Confidence Escalation**
+    - **Validates: Requirements 7.1, 7.2, 7.3, 7.5, 11.1, 11.2, 11.3, 11.5**
+  - [ ] 9.5 Implement response audit logging
+    - Log all automated responses with timestamps
+    - Store in analytics database for review
+    - _Requirements: 11.4_
+  - [ ] 9.6 Write property test for audit logging
+    - **Property 43: Response Audit Logging**
+    - **Validates: Requirements 11.4**
+
+- [ ] 10. Implement Routing Engine Service
+  - [ ] 10.1 Create agent management data structures
+    - Define Agent interface with skills, workload, status
+    - Implement agent availability tracking
+    - Create agent performance scoring
+    - _Requirements: 6.1, 6.2_
+  - [ ] 10.2 Implement routing decision logic
+    - Create automation vs. human routing decision (confidence > 0.85, urgency < 8)
+    - Implement agent matching algorithm (skills, language, workload, history)
+    - Add workload limit enforcement (max 5 conversations per agent)
+    - Implement agent continuity preference
+    - _Requirements: 6.1, 6.2, 6.4, 6.5, 7.1_
+  - [ ] 10.3 Implement conversation queueing
+    - Create priority queue ordered by urgency score
+    - Add queue status tracking
+    - Implement wait time estimation
+    - _Requirements: 6.3, 10.4_
+  - [ ] 10.4 Write property tests for routing
+    - **Property 17: High Urgency Agent Routing**
+    - **Property 20: Agent Skill Matching**
+    - **Property 21: Queue Ordering by Urgency**
+    - **Property 22: Agent Workload Limit**
+    - **Property 23: Agent Continuity Preference**
+    - **Property 45: Queue Urgency Ordering**
+    - **Validates: Requirements 5.3, 6.1, 6.2, 6.3, 6.4, 6.5, 12.2**
+  - [ ] 10.5 Implement escalation handling
+    - Detect explicit escalation requests (keywords)
+    - Implement automatic escalation after 3 failed automation attempts
+    - Transfer complete conversation context on escalation
+    - Send wait time notifications
+    - _Requirements: 10.1, 10.2, 10.3, 10.4_
+  - [ ] 10.6 Write property tests for escalation
+    - **Property 36: Explicit Escalation Request**
+    - **Property 37: Automatic Escalation Threshold**
+    - **Property 38: Escalation Context Transfer**
+    - **Property 39: Wait Time Notification**
+    - **Validates: Requirements 10.1, 10.2, 10.3, 10.4**
+
+- [ ] 11. Implement Action Recommender Service
+  - [ ] 11.1 Create action recommendation engine
+    - Implement pattern matching from historical resolutions
+    - Create recommendation ranking algorithm
+    - Limit recommendations to top 3
+    - Add confidence scoring for each recommendation
+    - _Requirements: 8.1, 8.2, 8.3_
+  - [ ] 11.2 Implement proactive action suggestions
+    - Detect scenarios requiring refunds, escalations, follow-ups
+    - Add context-aware action generation
+    - _Requirements: 8.5_
+  - [ ] 11.3 Implement action outcome tracking
+    - Log action selections and outcomes
+    - Store for model improvement
+    - _Requirements: 8.4_
+  - [ ] 11.4 Write property tests for action recommendations
+    - **Property 28: Action Recommendation Limit**
+    - **Property 29: Context-Aware Recommendations**
+    - **Property 30: Recommendation Confidence Scores**
+    - **Property 31: Action Outcome Tracking**
+    - **Property 32: Proactive Action Suggestions**
+    - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5**
+
+- [ ] 12. Checkpoint - Ensure core services are integrated
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 13. Implement message processing orchestration
+  - [ ] 13.1 Create main message processing pipeline
+    - Set up Kafka consumer for incoming messages
+    - Orchestrate flow: normalize → classify → analyze → predict urgency → route
+    - Implement error handling and circuit breakers
+    - Add dead letter queue for failed messages
+    - _Requirements: 1.1, 2.1, 3.1, 5.1, 6.1_
+  - [ ] 13.2 Implement event publishing
+    - Publish events to Kafka for analytics
+    - Implement webhook delivery for configured endpoints
+    - _Requirements: 13.1, 14.2_
+  - [ ] 13.3 Write property test for webhook delivery
+    - **Property 52: Webhook Event Delivery**
+    - **Validates: Requirements 14.2**
+
+- [ ] 14. Implement Analytics Engine
+  - [ ] 14.1 Create metrics collection service
+    - Track response time, resolution rate, customer satisfaction, channel usage
+    - Store metrics in analytics database
+    - _Requirements: 13.1_
+  - [ ] 14.2 Write property test for metrics collection
+    - **Property 46: Metrics Collection**
+    - **Validates: Requirements 13.1**
+  - [ ] 14.3 Implement reporting service
+    - Generate daily reports (conversation volume, sentiment trends, agent performance)
+    - Calculate cost savings from automation
+    - Identify trending topics and common issues
+    - _Requirements: 13.2, 13.3, 13.4_
+  - [ ] 14.4 Write property tests for reporting
+    - **Property 47: Daily Report Generation**
+    - **Property 48: Cost Savings Calculation**
+    - **Property 49: Trending Topic Identification**
+    - **Validates: Requirements 13.2, 13.3, 13.4**
+  - [ ] 14.5 Create real-time dashboard data service
+    - Provide current active conversations, queue depth, agent availability
+    - Implement WebSocket or Server-Sent Events for real-time updates
+    - _Requirements: 13.5_
+  - [ ] 14.6 Write property test for dashboard data
+    - **Property 50: Real-Time Dashboard Data**
+    - **Validates: Requirements 13.5**
+
+- [ ] 15. Implement Agent Dashboard Interface
+  - [ ] 15.1 Create unified timeline component
+    - Display all messages chronologically with channel indicators
+    - Show sentiment indicators and intent labels
+    - Highlight key events (escalations, sentiment changes, resolutions)
+    - _Requirements: 9.1, 9.2, 9.5_
+  - [ ] 15.2 Write property tests for timeline data
+    - **Property 33: Unified Timeline Completeness**
+    - **Property 35: Key Event Highlighting**
+    - **Validates: Requirements 9.1, 9.2, 9.5**
+  - [ ] 15.3 Create customer profile display component
+    - Show contact details, purchase history, previous issues
+    - Display customer value tier
+    - _Requirements: 9.3_
+  - [ ] 15.4 Write property test for profile data
+    - **Property 34: Customer Profile Availability**
+    - **Validates: Requirements 9.3**
+  - [ ] 15.5 Create action recommendation panel
+    - Display up to 3 recommended actions with confidence scores
+    - Allow agents to select and execute actions
+    - _Requirements: 8.1, 8.3_
+  - [ ] 15.6 Implement conversation management UI
+    - Allow agents to send messages
+    - Show typing indicators
+    - Display queue status and wait times
+    - _Requirements: 9.4, 10.4_
+
+- [ ] 16. Implement REST API and Integration Layer
+  - [ ] 16.1 Create REST API endpoints
+    - Implement conversation CRUD endpoints
+    - Create customer profile endpoints
+    - Add analytics and reporting endpoints
+    - Implement webhook configuration endpoints
+    - _Requirements: 14.1, 14.2_
+  - [ ] 16.2 Implement authentication and authorization
+    - Set up OAuth 2.0 authentication
+    - Implement API key authentication
+    - Add role-based access control middleware
+    - _Requirements: 14.3, 15.3_
+  - [ ] 16.3 Write property tests for API security
+    - **Property 51: API Authentication**
+    - **Property 55: Role-Based Access Control**
+    - **Validates: Requirements 14.3, 15.3**
+  - [ ] 16.4 Implement configuration management
+    - Allow custom intent categories and response templates
+    - Support routing rule configuration
+    - Enable escalation trigger customization
+    - _Requirements: 14.4, 14.5_
+  - [ ] 16.5 Write property test for custom configuration
+    - **Property 53: Custom Configuration Application**
+    - **Validates: Requirements 14.4, 14.5**
+
+- [ ] 17. Implement Security and Compliance Features
+  - [ ] 17.1 Implement data encryption
+    - Configure AES-256 encryption for data at rest
+    - Ensure TLS 1.3 for data in transit
+    - _Requirements: 15.1, 15.2_
+  - [ ] 17.2 Write property test for encryption at rest
+    - **Property 54: Data Encryption at Rest**
+    - **Validates: Requirements 15.1**
+  - [ ] 17.3 Implement data retention policies
+    - Create configurable retention policy engine
+    - Implement automatic data deletion/archival
+    - _Requirements: 15.4_
+  - [ ] 17.4 Write property test for retention policies
+    - **Property 56: Retention Policy Application**
+    - **Validates: Requirements 15.4**
+  - [ ] 17.5 Implement data deletion with anonymization
+    - Create customer data deletion workflow
+    - Remove PII while preserving anonymized analytics
+    - Ensure completion within 30 days
+    - _Requirements: 15.5_
+  - [ ] 17.6 Write property test for data deletion
+    - **Property 57: Data Deletion with Anonymization**
+    - **Validates: Requirements 15.5**
+
+- [ ] 18. Final checkpoint and integration testing
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 19. Write integration tests
+  - Test end-to-end message flow from channel to response
+  - Test escalation flows
+  - Test error handling and recovery
+  - Test cross-service communication
+  - _Requirements: All requirements_
+
+- [ ] 20. Performance and load testing
+  - Test system under 10,000 concurrent conversations
+  - Validate auto-scaling behavior
+  - Measure response times and identify bottlenecks
+  - _Requirements: 12.1, 12.2, 12.3, 12.5_
+
+## Notes
+
+- All tasks are required for comprehensive implementation
+- Each task references specific requirements for traceability
+- Property tests validate universal correctness properties with minimum 100 iterations
+- Unit tests validate specific examples and edge cases
+- The implementation follows a bottom-up approach: data models → services → orchestration → interfaces
+- Checkpoints ensure incremental validation and allow for user feedback
+- All property tests must use fast-check library and tag format: `Feature: omnichannel-cx-platform, Property {number}: {property_text}`
